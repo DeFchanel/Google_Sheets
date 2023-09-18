@@ -34,6 +34,13 @@ class SQL():
         );
         """)
         conn.commit()
+        cur.execute("""CREATE TABLE IF NOT EXISTS skips(
+        id INT PRIMARY KEY,
+        student_id INT,
+        date_time TEXT
+        );
+        """)
+        conn.commit()
         # Данные о группах(время в UTC, но надо проверить правильность)
         # cur.execute("INSERT INTO groups VALUES(?, ?, ?, ?, ?, ?);", (1119554223579873310, 'saturday', '09:00', '11:00', 1119555115691548722, 1119555041230069760))
         # conn.commit()
@@ -56,18 +63,18 @@ class SQL():
         # cur.execute("INSERT INTO groups VALUES(?, ?, ?, ?, ?, ?);", (1119557679505997944, 'tuesday, thursday', '15:00', '16:00', 1120730337044090890, 1120730234388484136))
         # conn.commit()
 
-        cur.execute("INSERT INTO groups VALUES(?, ?, ?, ?, ?, ?);", (1119557752419794964, 'tuesday, thursday', '16:00', '17:00', 1120745828504567939, 1120745752755445810))
-        conn.commit()
+        # cur.execute("INSERT INTO groups VALUES(?, ?, ?, ?, ?, ?);", (1119557752419794964, 'tuesday, thursday', '16:00', '17:00', 1120745828504567939, 1120745752755445810))
+        # conn.commit()
 
-        cur.execute("INSERT INTO groups VALUES(?, ?, ?, ?, ?, ?);", (1119557849857667202, 'wednesday, friday', '13:00', '14:00', 1121063191481421904, 1121063123391098991))
-        conn.commit()
+        # cur.execute("INSERT INTO groups VALUES(?, ?, ?, ?, ?, ?);", (1119557849857667202, 'wednesday, friday', '13:00', '14:00', 1121063191481421904, 1121063123391098991))
+        # conn.commit()
 
         ## Test
         # cur.execute("INSERT INTO groups VALUES(?, ?, ?, ?, ?, ?);", (1119557596907577404, 'monday, friday, saturday, sunday', '09:26', '11:00', 1120389836730286110, 1120389774243549247))
         # conn.commit()
         # cur.execute("INSERT INTO groups VALUES(?, ?, ?, ?, ?, ?);", (1132589392079355904, 'saturday, sunday, monday, tuesday, wednesday, thursday, friday', '20:06', '20:08', 1126820305923493888, 1119576448064294972))
         # conn.commit()
-        conn.close()
+        # conn.close()
 
     # Students
     def get_all_students(self) -> list:
@@ -103,15 +110,6 @@ class SQL():
                     'dvmn_link': student[3],
                     'skips': student[4]
         }
-
-
-    def remove_all_students(self) -> None:
-        conn = sqlite3.connect('data.db')
-        cur = conn.cursor()
-        cur.execute(f'DELETE from students')
-        conn.commit()
-        conn.close()
-
 
     def update_student_skips(self, skips: int, discord_id: int) -> None:
         conn = sqlite3.connect('data.db')
@@ -163,6 +161,13 @@ class SQL():
         conn.commit()
         conn.close()
 
+    def remove_all_students(self) -> None:
+        conn = sqlite3.connect('data.db')
+        cur = conn.cursor()
+        cur.execute(f'DELETE from students')
+        conn.commit()
+        conn.close()
+
     # Groups
     def create_group(self, role_id: int, days: str, start_time: str, end_time: str, voice_chat_id: int, text_chat_id: int) -> None:
         conn = sqlite3.connect('data.db')
@@ -171,17 +176,17 @@ class SQL():
         conn.commit()
         conn.close()
 
-    def remove_all_groups(self) -> None:
-        conn = sqlite3.connect('data.db')
-        cur = conn.cursor()
-        cur.execute(f'DELETE from groups')
-        conn.commit()
-        conn.close()
-    
     def remove_group(self, role_id: int) -> None:
         conn = sqlite3.connect('data.db')
         cur = conn.cursor()
         cur.execute(f'DELETE from groups WHERE role_id={role_id}')
+        conn.commit()
+        conn.close()
+
+    def remove_all_groups(self) -> None:
+        conn = sqlite3.connect('data.db')
+        cur = conn.cursor()
+        cur.execute(f'DELETE from groups')
         conn.commit()
         conn.close()
     
@@ -212,6 +217,21 @@ class SQL():
         otv = [i[0] for i in cur.fetchall()]
         conn.close()
         return otv
+    
+    def get_group_by_role_id(self, role_id: int) -> dict:
+        conn = sqlite3.connect('data.db')
+        cur = conn.cursor()
+        cur.execute(f"SELECT * FROM groups WHERE role_id = {role_id}")
+        group = cur.fetchone()
+        conn.close()
+        return {
+                'role_id': group[0],
+                'days': group[1],
+                'start_time': group[2],
+                'end_time': group[3],
+                'voice_chat_id': group[4],
+                'channel_id': group[5]
+        }
     
     def get_groups_where_voice_channel(self, voice_chat_id: int) -> dict:
         conn = sqlite3.connect('data.db')
@@ -265,10 +285,20 @@ class SQL():
         cur.execute("SELECT * FROM working_of")
         id = len(cur.fetchall()) + 1
         cur = conn.cursor()
-        cur.execute("INSERT INTO working_of VALUES(?, ?, ?, ?, ?, ?, ?);", (id, discord_id, role_id, start_time, end_time, True, voice_id)) # TODO поменять на False
+        cur.execute("INSERT INTO working_of VALUES(?, ?, ?, ?, ?, ?, ?);", (id, discord_id, role_id, start_time, end_time, False, voice_id))
         conn.commit()
         conn.close()
         return id
+
+    def create_working_of_by_sheet(self, discord_id: int, role_id: int, start_time: str, end_time: str, was_visited: bool, voice_id: int) -> int:
+        conn = sqlite3.connect('data.db')
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM working_of")
+        id = len(cur.fetchall()) + 1
+        cur = conn.cursor()
+        cur.execute("INSERT INTO working_of VALUES(?, ?, ?, ?, ?, ?, ?);", (id, discord_id, role_id, start_time, end_time, was_visited, voice_id))
+        conn.commit()
+        conn.close()
 
     def update_working_of_visit(self, db_id: int, is_visit: bool) -> None:
         conn = sqlite3.connect('data.db')
@@ -316,5 +346,37 @@ class SQL():
         conn = sqlite3.connect('data.db')
         cur = conn.cursor()
         cur.execute(f'DELETE from working_of')
+        conn.commit()
+        conn.close()
+    # Skips
+    def get_all_skips(self) -> list:
+        conn = sqlite3.connect('data.db')
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM skips")
+        all_working_of = cur.fetchall()
+        conn.close()
+        data = []
+        for working_of in all_working_of:
+            data.append({
+            'id': working_of[0],
+            'student_id': working_of[1],
+            'date_time': working_of[2],
+            })
+        return data
+
+    def add_skip(self, student_id: int, date_time: str) -> None:
+        conn = sqlite3.connect('data.db')
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM skips")
+        id = len(cur.fetchall()) + 1
+        cur = conn.cursor()
+        cur.execute("INSERT INTO skips VALUES(?, ?, ?);", (id, student_id, date_time))
+        conn.commit()
+        conn.close()
+
+    def remove_all_skips(self) -> None:
+        conn = sqlite3.connect('data.db')
+        cur = conn.cursor()
+        cur.execute(f'DELETE from skips')
         conn.commit()
         conn.close()
