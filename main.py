@@ -42,8 +42,8 @@ def upload_workings(sh):
     workings_data = workings_worksheet.get_all_values()
     db.remove_all_working_of()
     for working in workings_data[1:]:
-        if working != ['', '', '', '', '', '', '']:
-            db.create_working_of(working[1], working[2], working[3], working[4], working[6])
+        if working != ['', '', '', '', '', '', '', '']:
+            db.create_working_of(working[2], working[3], working[4], working[5], working[7])
     make_working_off_worksheet(sh)
 
 
@@ -105,16 +105,20 @@ def make_students_worksheet(sh):
 def make_working_off_worksheet(sh):
     workings = db.get_all_working_of()
     try:
-        worksheet = sh.add_worksheet(title="Отработки", rows=100, cols="7")
+        worksheet = sh.add_worksheet(title="Отработки", rows=100, cols="8")
     except gspread.exceptions.APIError:
         worksheet = sh.worksheet("Отработки")
         worksheet.clear()
-    data = [['ID', 'ID ученика', 'ID Дискорд роли', 'Время начала занятия, UTC', 'Время окончания занятия, UTC', 'Статус визита ученика', 'ID голосового чата',]]
+    data = [['ID', 'Ученик', 'ID ученика', 'ID Дискорд роли', 'Время начала занятия, UTC', 'Время окончания занятия, UTC', 'Статус визита ученика', 'ID голосового чата',]]
     for working in workings:
-        workings_data = [str(working['id']), working['student_id'], str(working['role_id']), working['start_time'], working['end_time'], working['student_visit'], working['voice_id']]
+        try:
+            student = db.get_student(working['student_id'])
+            workings_data = [str(working['id']), student['name'], working['student_id'], str(working['role_id']), working['start_time'], working['end_time'], working['student_visit'], working['voice_id']]
+        except:
+            workings_data = [str(working['id']), 'Ученик не найден', working['student_id'], str(working['role_id']), working['start_time'], working['end_time'], working['student_visit'], working['voice_id']]
         data.append(workings_data)
-    worksheet.update(f'A1:G{len(data)}', data)
-    worksheet.format('A1:G1', {'textFormat': {'bold': True}})
+    worksheet.update(f'A1:H{len(data)}', data)
+    worksheet.format('A1:H1', {'textFormat': {'bold': True}})
                          
 
 def main():
