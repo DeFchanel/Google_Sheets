@@ -44,8 +44,8 @@ def upload_workings(sh):
     workings_data = workings_worksheet.get_all_values()
     db.remove_all_working_of()
     for working in workings_data[1:]:
-        start_time = f"{int(str(working[4]).split(':')[0]) - 3}:{str(working[4]).split(':')[1]}"
-        end_time = f"{int(str(working[5]).split(':')[0]) - 3}:{str(working[5]).split(':')[1]}"
+        start_time = f"{int(str(working[4]).split(':')[0][-2:]) - 3}:{str(working[4]).split(':')[1]}"
+        end_time = f"{int(str(working[5]).split(':')[0][-2:]) - 3}:{str(working[5]).split(':')[1]}"
         if working != ['', '', '', '', '', '', '', '']:
             db.create_working_of(working[2], working[3], start_time, end_time, working[7])
     make_working_off_worksheet(sh)
@@ -122,8 +122,8 @@ def make_working_off_worksheet(sh):
         worksheet.clear()
     data = [['ID', 'Ученик', 'ID ученика', 'ID Дискорд роли', 'Время начала занятия', 'Время окончания занятия', 'Статус визита ученика', 'ID голосового чата',]]
     for working in workings:
-        start_time = f"{int(str(working['start_time']).split(':')[0]) + 3}:{str(working['start_time']).split(':')[1]}"
-        end_time = f"{int(str(working['end_time']).split(':')[0]) + 3}:{str(working['end_time']).split(':')[1]}"
+        start_time = f"{int(str(working['start_time']).split(':')[0][-2:]) + 3}:{str(working['start_time']).split(':')[1]}"
+        end_time = f"{int(str(working['end_time']).split(':')[0][-2:]) + 3}:{str(working['end_time']).split(':')[1]}"
         try: 
             student = db.get_student(working['student_id'])
             workings_data = [str(working['id']), student['name'], working['student_id'], str(working['role_id']), start_time, end_time, working['student_visit'], working['voice_id']]
